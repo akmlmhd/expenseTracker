@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+FLUTTER_VERSION="${FLUTTER_VERSION:-3.29.2}"
+
 cat > .env <<EOF
 API_BASE_URL=${API_BASE_URL:-https://rms.oceztra.com/api/}
 AUTH_ENABLED=${AUTH_ENABLED:-true}
@@ -14,9 +16,13 @@ FIREBASE_STORAGE_BUCKET=${FIREBASE_STORAGE_BUCKET:-expensestracker-487f6.firebas
 EOF
 
 if [ ! -d flutter ]; then
-  git clone https://github.com/flutter/flutter.git -b stable --depth 1
+  git clone https://github.com/flutter/flutter.git -b "$FLUTTER_VERSION" --depth 1
+else
+  git -C flutter fetch --tags --depth 1 origin "$FLUTTER_VERSION"
+  git -C flutter checkout "$FLUTTER_VERSION"
 fi
 
+./flutter/bin/flutter --version
 ./flutter/bin/flutter config --enable-web
 ./flutter/bin/flutter pub get
 ./flutter/bin/flutter build web --release
