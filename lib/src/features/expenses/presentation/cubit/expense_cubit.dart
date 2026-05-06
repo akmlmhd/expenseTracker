@@ -31,6 +31,18 @@ class ExpenseCubit extends Cubit<ExpenseState> {
     );
   }
 
+  Future<void> updateExpense(Expense expense) async {
+    emit(ExpenseLoading());
+    final result = await _repository.updateExpense(expense);
+    result.fold(
+      (failure) => emit(ExpenseError(failure.message)),
+      (_) async {
+        emit(ExpenseActionSuccess());
+        await getExpenses();
+      },
+    );
+  }
+
   Future<void> deleteExpense(String id) async {
     emit(ExpenseLoading());
     final result = await _repository.deleteExpense(id);

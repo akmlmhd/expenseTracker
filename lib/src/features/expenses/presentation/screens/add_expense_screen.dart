@@ -7,7 +7,12 @@ import '../cubit/expense_cubit.dart';
 import '../cubit/expense_state.dart';
 
 class AddExpenseScreen extends HookWidget {
-  const AddExpenseScreen({super.key});
+  final Expense? expense;
+
+  const AddExpenseScreen({
+    super.key,
+    this.expense,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -15,18 +20,25 @@ class AddExpenseScreen extends HookWidget {
     final colorScheme = theme.colorScheme;
     final textTheme = theme.textTheme;
 
-    final selectedType = useState('Expense');
-    final selectedCategory = useState<String?>(null);
-    final selectedDate = useState(DateTime.now());
+    final isEditing = expense != null;
+    final selectedType =
+        useState(expense?.isIncome == true ? 'Income' : 'Expense');
+    final selectedCategory = useState<String?>(expense?.category);
+    final selectedDate = useState(expense?.date ?? DateTime.now());
 
-    final amountController = useTextEditingController();
-    final noteController = useTextEditingController();
+    final amountController = useTextEditingController(
+      text: expense == null ? '' : expense!.amount.toStringAsFixed(2),
+    );
+    final noteController = useTextEditingController(text: expense?.note ?? '');
 
     return BlocListener<ExpenseCubit, ExpenseState>(
       listener: (context, state) {
         if (state is ExpenseActionSuccess) {
           showToast(context,
-              message: 'Transaction saved successfully!', status: 'success');
+              message: isEditing
+                  ? 'Transaction updated successfully!'
+                  : 'Transaction saved successfully!',
+              status: 'success');
           Navigator.pop(context);
         } else if (state is ExpenseError) {
           showToast(context, message: state.message, status: 'error');
@@ -76,7 +88,7 @@ class AddExpenseScreen extends HookWidget {
                       ),
                       SizedBox(width: AppSpacing.sm.w),
                       Text(
-                        'Add Transaction',
+                        isEditing ? 'Edit Transaction' : 'Add Transaction',
                         style: textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.w800,
                         ),
@@ -311,10 +323,11 @@ class AddExpenseScreen extends HookWidget {
                                     status: 'error');
                                 return;
                               }
-                              final expense = Expense(
-                                id: DateTime.now()
-                                    .millisecondsSinceEpoch
-                                    .toString(),
+                              final updatedExpense = Expense(
+                                id: expense?.id ??
+                                    DateTime.now()
+                                        .millisecondsSinceEpoch
+                                        .toString(),
                                 title: category,
                                 amount: amount,
                                 date: selectedDate.value,
@@ -322,7 +335,15 @@ class AddExpenseScreen extends HookWidget {
                                 note: noteController.text,
                                 isIncome: selectedType.value == 'Income',
                               );
-                              context.read<ExpenseCubit>().addExpense(expense);
+                              if (isEditing) {
+                                context
+                                    .read<ExpenseCubit>()
+                                    .updateExpense(updatedExpense);
+                              } else {
+                                context
+                                    .read<ExpenseCubit>()
+                                    .addExpense(updatedExpense);
+                              }
                             },
                       style: FilledButton.styleFrom(
                         padding:
@@ -332,7 +353,10 @@ class AddExpenseScreen extends HookWidget {
                       ),
                       child: isLoading
                           ? const CircularProgressIndicator(color: Colors.white)
-                          : Text('Save Transaction',
+                          : Text(
+                              isEditing
+                                  ? 'Update Transaction'
+                                  : 'Save Transaction',
                               style: textTheme.titleSmall?.copyWith(
                                   fontWeight: FontWeight.w700,
                                   color: colorScheme.onPrimary)),

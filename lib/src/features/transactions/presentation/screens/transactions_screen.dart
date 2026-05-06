@@ -1,5 +1,6 @@
 import 'package:expenses_tracker/src/features/expenses/presentation/cubit/expense_cubit.dart';
 import 'package:expenses_tracker/src/features/expenses/presentation/cubit/expense_state.dart';
+import 'package:expenses_tracker/src/features/expenses/presentation/screens/add_expense_screen.dart';
 import 'package:expenses_tracker/src/features/categories/category_icons.dart';
 import 'package:expenses_tracker/src/imports/core_imports.dart';
 import 'package:expenses_tracker/src/imports/packages_imports.dart';
@@ -107,6 +108,10 @@ class TransactionsScreen extends HookWidget {
                           category: expense.category,
                           amount: '${expense.isIncome ? '+' : '-'} RM ${expense.amount.toStringAsFixed(2)}',
                           isIncome: expense.isIncome,
+                          onTap: () => _showEditTransactionSheet(
+                            context,
+                            expense,
+                          ),
                         );
                       },
                     ),
@@ -119,6 +124,15 @@ class TransactionsScreen extends HookWidget {
           },
         ),
       ),
+    );
+  }
+
+  void _showEditTransactionSheet(BuildContext context, Expense expense) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => AddExpenseScreen(expense: expense),
     );
   }
 
@@ -376,6 +390,10 @@ class _SummaryItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = context.theme.colorScheme;
     final textTheme = context.theme.textTheme;
+    final isDark = context.theme.brightness == Brightness.dark;
+    final amountColor = isIncome
+        ? (isDark ? const Color(0xFF7DFF9A) : const Color(0xFF0B7A34))
+        : (isDark ? const Color(0xFFFF8A8A) : const Color(0xFFB3261E));
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -390,8 +408,16 @@ class _SummaryItem extends StatelessWidget {
         Text(
           value,
           style: textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w700,
-            color: isIncome ? Colors.green : Colors.red,
+            fontWeight: FontWeight.w900,
+            color: amountColor,
+            shadows: isDark
+                ? [
+                    Shadow(
+                      color: amountColor.withValues(alpha: 0.28),
+                      blurRadius: 10,
+                    ),
+                  ]
+                : null,
           ),
         ),
       ],
@@ -512,12 +538,14 @@ class _TransactionTile extends StatelessWidget {
   final String category;
   final String amount;
   final bool isIncome;
+  final VoidCallback onTap;
 
   const _TransactionTile({
     required this.icon,
     required this.title,
     required this.category,
     required this.amount,
+    required this.onTap,
     this.isIncome = false,
   });
 
@@ -526,51 +554,67 @@ class _TransactionTile extends StatelessWidget {
     final colorScheme = context.theme.colorScheme;
     final textTheme = context.theme.textTheme;
 
-    return Container(
-      margin: EdgeInsets.only(bottom: AppSpacing.sm.h),
-      padding: EdgeInsets.all(AppSpacing.md.w),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerLowest,
-        borderRadius: BorderRadius.circular(18.r),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: EdgeInsets.all(AppSpacing.sm.w),
-            decoration: BoxDecoration(
-              color: colorScheme.primary.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(14.r),
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(18.r),
+      child: Container(
+        margin: EdgeInsets.only(bottom: AppSpacing.sm.h),
+        padding: EdgeInsets.all(AppSpacing.md.w),
+        decoration: BoxDecoration(
+          color: colorScheme.surfaceContainerLowest,
+          borderRadius: BorderRadius.circular(18.r),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: EdgeInsets.all(AppSpacing.sm.w),
+              decoration: BoxDecoration(
+                color: colorScheme.primary.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(14.r),
+              ),
+              child: Icon(icon, color: colorScheme.primary),
             ),
-            child: Icon(icon, color: colorScheme.primary),
-          ),
-          SizedBox(width: AppSpacing.md.w),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            SizedBox(width: AppSpacing.md.w),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: textTheme.bodyLarge?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  Text(
+                    category,
+                    style: textTheme.bodySmall?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(width: AppSpacing.sm.w),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  title,
+                  amount,
                   style: textTheme.bodyLarge?.copyWith(
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w800,
+                    color: isIncome ? Colors.green : Colors.red,
                   ),
                 ),
-                Text(
-                  category,
-                  style: textTheme.bodySmall?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
+                SizedBox(height: 4.h),
+                Icon(
+                  FlutterRemix.edit_2_line,
+                  size: 16.sp,
+                  color: colorScheme.onSurfaceVariant,
                 ),
               ],
             ),
-          ),
-          Text(
-            amount,
-            style: textTheme.bodyLarge?.copyWith(
-              fontWeight: FontWeight.w800,
-              color: isIncome ? Colors.green : Colors.red,
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
