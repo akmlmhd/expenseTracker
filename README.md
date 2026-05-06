@@ -21,8 +21,8 @@ A modern Flutter application designed to help you track transactions, manage bud
 - 🎨 **Material 3 UI**  
   Clean, modern, and responsive design.
 
-- 🚀 **Custom Backend Integration**  
-  Supports integration with your own APIs.
+- ☁️ **Firebase Backend Integration**  
+  Real-time data storage and synchronization using Firebase.
 
 ---
 
@@ -32,7 +32,7 @@ A modern Flutter application designed to help you track transactions, manage bud
 - **State Management:** BLoC  
 - **Routing:** go_router  
 - **UI Design:** Material 3  
-- **Backend:** Custom API  
+- **Backend:** Firebase  
 
 ---
 
