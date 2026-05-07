@@ -75,7 +75,7 @@ class AppBottomNavBar extends StatelessWidget {
               ],
             ),
           ),
-          
+
           // The Floating Bold Add Button
           Positioned(
             bottom: 20.h, // Lift it slightly
@@ -102,25 +102,30 @@ class _AddButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = context.theme.colorScheme;
-    
+
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        width: 60.w,
-        height: 60.w,
-        decoration: BoxDecoration(
-          color: colorScheme.primary,
-          shape: BoxShape.circle,
-          boxShadow: AppShadows.elevated,
-          border: Border.all(
-            color: colorScheme.surface,
-            width: 4.r,
+      child: AnimatedScale(
+        scale: isSelected ? 0.94 : 1,
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOutCubic,
+        child: Container(
+          width: 60.w,
+          height: 60.w,
+          decoration: BoxDecoration(
+            color: colorScheme.primary,
+            shape: BoxShape.circle,
+            boxShadow: AppShadows.elevated,
+            border: Border.all(
+              color: colorScheme.surface,
+              width: 4.r,
+            ),
           ),
-        ),
-        child: Icon(
-          FlutterRemix.add_line,
-          color: colorScheme.onPrimary,
-          size: 32.r,
+          child: Icon(
+            FlutterRemix.add_line,
+            color: colorScheme.onPrimary,
+            size: 32.r,
+          ),
         ),
       ),
     );
@@ -149,6 +154,7 @@ class _NavBarItem extends StatelessWidget {
     final isSelected = index == currentIndex;
     final colorScheme = context.theme.colorScheme;
     final tt = context.theme.textTheme;
+    final baseLabelStyle = tt.labelSmall ?? DefaultTextStyle.of(context).style;
 
     return Expanded(
       child: InkWell(
@@ -158,20 +164,43 @@ class _NavBarItem extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              isSelected ? activeIcon : icon,
-              color: isSelected ? colorScheme.primary : colorScheme.onSurfaceVariant.withOpacity(0.6),
-              size: 24.r,
+            AnimatedScale(
+              scale: isSelected ? 1.08 : 1,
+              duration: const Duration(milliseconds: 180),
+              curve: Curves.easeOutCubic,
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 180),
+                switchInCurve: Curves.easeOutCubic,
+                switchOutCurve: Curves.easeOutCubic,
+                transitionBuilder: (child, animation) {
+                  return FadeTransition(
+                    opacity: animation,
+                    child: ScaleTransition(scale: animation, child: child),
+                  );
+                },
+                child: Icon(
+                  isSelected ? activeIcon : icon,
+                  key: ValueKey('${label}_$isSelected'),
+                  color: isSelected
+                      ? colorScheme.primary
+                      : colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                  size: 24.r,
+                ),
+              ),
             ),
             if (label.isNotEmpty) ...[
               SizedBox(height: 2.h),
-              Text(
-                label,
-                style: tt.labelSmall?.copyWith(
-                  color: isSelected ? colorScheme.primary : colorScheme.onSurfaceVariant.withOpacity(0.6),
+              AnimatedDefaultTextStyle(
+                duration: const Duration(milliseconds: 180),
+                curve: Curves.easeOutCubic,
+                style: baseLabelStyle.copyWith(
+                  color: isSelected
+                      ? colorScheme.primary
+                      : colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
                   fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                   fontSize: 10.sp,
                 ),
+                child: Text(label),
               ),
             ],
           ],

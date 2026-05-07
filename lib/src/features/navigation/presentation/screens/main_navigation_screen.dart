@@ -32,9 +32,11 @@ class MainNavigationScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final pageIndex = currentIndex > 2 ? currentIndex - 1 : currentIndex;
+
     return Scaffold(
-      body: IndexedStack(
-        index: currentIndex > 2 ? currentIndex - 1 : currentIndex,
+      body: _AnimatedTabStack(
+        index: pageIndex,
         children: _screens,
       ),
       bottomNavigationBar: AppBottomNavBar(
@@ -53,11 +55,53 @@ class MainNavigationScreen extends StatelessWidget {
   }
 
   void _showAddExpenseSheet(BuildContext context) {
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => const AddExpenseScreen(),
+    );
+  }
+}
+
+class _AnimatedTabStack extends StatelessWidget {
+  final int index;
+  final List<Widget> children;
+
+  const _AnimatedTabStack({
+    required this.index,
+    required this.children,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: List.generate(children.length, (childIndex) {
+        final isActive = childIndex == index;
+        final slideOffset = childIndex < index
+            ? const Offset(-0.04, 0)
+            : childIndex > index
+                ? const Offset(0.04, 0)
+                : Offset.zero;
+
+        return IgnorePointer(
+          ignoring: !isActive,
+          child: TickerMode(
+            enabled: isActive,
+            child: AnimatedOpacity(
+              opacity: isActive ? 1 : 0,
+              duration: const Duration(milliseconds: 220),
+              curve: Curves.easeOutCubic,
+              child: AnimatedSlide(
+                offset: isActive ? Offset.zero : slideOffset,
+                duration: const Duration(milliseconds: 260),
+                curve: Curves.easeOutCubic,
+                child: children[childIndex],
+              ),
+            ),
+          ),
+        );
+      }),
     );
   }
 }

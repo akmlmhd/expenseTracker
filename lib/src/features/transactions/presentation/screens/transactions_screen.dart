@@ -38,7 +38,38 @@ class TransactionsScreen extends HookWidget {
         child: BlocBuilder<ExpenseCubit, ExpenseState>(
           builder: (context, state) {
             if (state is ExpenseLoading) {
-              return const Center(child: CircularProgressIndicator());
+              return Skeletonizer(
+                enabled: true,
+                child: Column(
+                  children: [
+                    _buildSummaryAndFilters(
+                      context,
+                      selectedFilter,
+                      customDateRange,
+                      _placeholderExpenses(),
+                    ),
+                    SizedBox(height: AppSpacing.md.h),
+                    Expanded(
+                      child: ListView.builder(
+                        padding:
+                            EdgeInsets.symmetric(horizontal: AppSpacing.lg.w),
+                        itemCount: 5,
+                        itemBuilder: (context, index) {
+                          final expense = _placeholderExpenses()[index];
+                          return _TransactionTile(
+                            icon: iconForCategory(expense.category),
+                            title: expense.title,
+                            category: expense.category,
+                            amount: '- RM ${expense.amount.toStringAsFixed(2)}',
+                            isIncome: expense.isIncome,
+                            onTap: () {},
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              );
             }
 
             if (state is ExpenseError) {
@@ -54,16 +85,24 @@ class TransactionsScreen extends HookWidget {
                 final date = expense.date;
 
                 if (selectedFilter.value == 'Today') {
-                  return date.year == now.year && date.month == now.month && date.day == now.day;
+                  return date.year == now.year &&
+                      date.month == now.month &&
+                      date.day == now.day;
                 } else if (selectedFilter.value == 'This Week') {
-                  final weekStart = now.subtract(Duration(days: now.weekday - 1));
-                  final startOfDay = DateTime(weekStart.year, weekStart.month, weekStart.day);
-                  return date.isAfter(startOfDay.subtract(const Duration(seconds: 1)));
+                  final weekStart =
+                      now.subtract(Duration(days: now.weekday - 1));
+                  final startOfDay =
+                      DateTime(weekStart.year, weekStart.month, weekStart.day);
+                  return date
+                      .isAfter(startOfDay.subtract(const Duration(seconds: 1)));
                 } else if (selectedFilter.value == 'This Month') {
                   return date.year == now.year && date.month == now.month;
-                } else if (selectedFilter.value == 'Custom' && customDateRange.value != null) {
-                  return date.isAfter(customDateRange.value!.start.subtract(const Duration(seconds: 1))) &&
-                      date.isBefore(customDateRange.value!.end.add(const Duration(days: 1)));
+                } else if (selectedFilter.value == 'Custom' &&
+                    customDateRange.value != null) {
+                  return date.isAfter(customDateRange.value!.start
+                          .subtract(const Duration(seconds: 1))) &&
+                      date.isBefore(customDateRange.value!.end
+                          .add(const Duration(days: 1)));
                 }
                 return true; // Default to all if custom but no range
               }).toList();
@@ -71,15 +110,20 @@ class TransactionsScreen extends HookWidget {
               if (filteredExpenses.isEmpty) {
                 return Column(
                   children: [
-                    _buildSummaryAndFilters(context, selectedFilter, customDateRange, filteredExpenses),
+                    _buildSummaryAndFilters(context, selectedFilter,
+                        customDateRange, filteredExpenses),
                     Expanded(
                       child: Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(FlutterRemix.history_line, size: 64.sp, color: colorScheme.onSurfaceVariant.withOpacity(0.5)),
+                            Icon(FlutterRemix.history_line,
+                                size: 64.sp,
+                                color: colorScheme.onSurfaceVariant
+                                    .withOpacity(0.5)),
                             SizedBox(height: AppSpacing.md.h),
-                            Text('No transactions found', style: textTheme.titleMedium),
+                            Text('No transactions found',
+                                style: textTheme.titleMedium),
                           ],
                         ),
                       ),
@@ -91,22 +135,26 @@ class TransactionsScreen extends HookWidget {
               return Column(
                 children: [
                   /// Summary Card & Filters
-                  _buildSummaryAndFilters(context, selectedFilter, customDateRange, filteredExpenses),
+                  _buildSummaryAndFilters(context, selectedFilter,
+                      customDateRange, filteredExpenses),
 
                   SizedBox(height: AppSpacing.md.h),
 
                   /// Transaction List
                   Expanded(
                     child: ListView.builder(
-                      padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg.w),
+                      padding:
+                          EdgeInsets.symmetric(horizontal: AppSpacing.lg.w),
                       itemCount: filteredExpenses.length,
                       itemBuilder: (context, index) {
-                        final expense = filteredExpenses.reversed.toList()[index];
+                        final expense =
+                            filteredExpenses.reversed.toList()[index];
                         return _TransactionTile(
                           icon: iconForCategory(expense.category),
                           title: expense.title,
                           category: expense.category,
-                          amount: '${expense.isIncome ? '+' : '-'} RM ${expense.amount.toStringAsFixed(2)}',
+                          amount:
+                              '${expense.isIncome ? '+' : '-'} RM ${expense.amount.toStringAsFixed(2)}',
                           isIncome: expense.isIncome,
                           onTap: () => _showEditTransactionSheet(
                             context,
@@ -136,6 +184,21 @@ class TransactionsScreen extends HookWidget {
     );
   }
 
+  List<Expense> _placeholderExpenses() {
+    final now = DateTime.now();
+    return List.generate(
+      5,
+      (index) => Expense(
+        id: 'loading-$index',
+        title: 'Transaction title',
+        amount: 125 + (index * 25),
+        date: now,
+        category: index.isEven ? 'Food' : 'Salary',
+        isIncome: index == 1,
+      ),
+    );
+  }
+
   Widget _buildSummaryAndFilters(
     BuildContext context,
     ValueNotifier<String> selectedFilter,
@@ -143,7 +206,6 @@ class TransactionsScreen extends HookWidget {
     List<Expense> expenses,
   ) {
     final theme = context.theme;
-    final colorScheme = theme.colorScheme;
     final textTheme = theme.textTheme;
 
     // Calculate totals for the filtered list
@@ -236,18 +298,21 @@ class TransactionsScreen extends HookWidget {
                 onTap: () => selectedFilter.value = 'This Month',
               ),
               _FilterChip(
-                label: selectedFilter.value == 'Custom' && customDateRange.value != null
+                label: selectedFilter.value == 'Custom' &&
+                        customDateRange.value != null
                     ? '${customDateRange.value!.start.day}/${customDateRange.value!.start.month} - ${customDateRange.value!.end.day}/${customDateRange.value!.end.month}'
                     : 'Custom',
                 icon: FlutterRemix.calendar_event_line,
                 selected: selectedFilter.value == 'Custom',
-                showClear: selectedFilter.value == 'Custom' && customDateRange.value != null,
+                showClear: selectedFilter.value == 'Custom' &&
+                    customDateRange.value != null,
                 onClear: () {
                   customDateRange.value = null;
                   selectedFilter.value = 'This Month';
                 },
                 onTap: () async {
-                  await _showCustomDateRangePicker(context, customDateRange, selectedFilter);
+                  await _showCustomDateRangePicker(
+                      context, customDateRange, selectedFilter);
                 },
               ),
             ],
@@ -265,7 +330,8 @@ class TransactionsScreen extends HookWidget {
     final colorScheme = context.theme.colorScheme;
     final textTheme = context.theme.textTheme;
 
-    DateTime startDate = customDateRange.value?.start ?? DateTime.now().subtract(const Duration(days: 7));
+    DateTime startDate = customDateRange.value?.start ??
+        DateTime.now().subtract(const Duration(days: 7));
     DateTime endDate = customDateRange.value?.end ?? DateTime.now();
 
     await showModalBottomSheet(
@@ -279,7 +345,8 @@ class TransactionsScreen extends HookWidget {
               color: colorScheme.surface,
               borderRadius: BorderRadius.vertical(top: Radius.circular(28.r)),
             ),
-            padding: EdgeInsets.fromLTRB(AppSpacing.lg.w, AppSpacing.md.h, AppSpacing.lg.w, AppSpacing.xl.h),
+            padding: EdgeInsets.fromLTRB(AppSpacing.lg.w, AppSpacing.md.h,
+                AppSpacing.lg.w, AppSpacing.xl.h),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -300,7 +367,8 @@ class TransactionsScreen extends HookWidget {
                   children: [
                     Text(
                       'Select Date Range',
-                      style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+                      style: textTheme.titleLarge
+                          ?.copyWith(fontWeight: FontWeight.w800),
                     ),
                     IconButton(
                       onPressed: () => Navigator.pop(context),
@@ -322,7 +390,8 @@ class TransactionsScreen extends HookWidget {
                             firstDate: DateTime(2020),
                             lastDate: endDate,
                           );
-                          if (picked != null) setState(() => startDate = picked);
+                          if (picked != null)
+                            setState(() => startDate = picked);
                         },
                       ),
                     ),
@@ -349,13 +418,15 @@ class TransactionsScreen extends HookWidget {
                   width: double.infinity,
                   child: FilledButton(
                     onPressed: () {
-                      customDateRange.value = DateTimeRange(start: startDate, end: endDate);
+                      customDateRange.value =
+                          DateTimeRange(start: startDate, end: endDate);
                       selectedFilter.value = 'Custom';
                       Navigator.pop(context);
                     },
                     style: FilledButton.styleFrom(
                       padding: EdgeInsets.symmetric(vertical: AppSpacing.md.h),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18.r)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(18.r)),
                     ),
                     child: Text(
                       'Apply Range',
@@ -457,7 +528,9 @@ class _FilterChip extends StatelessWidget {
             vertical: 8.h,
           ),
           decoration: BoxDecoration(
-            color: selected ? colorScheme.primary : colorScheme.surfaceContainerHighest,
+            color: selected
+                ? colorScheme.primary
+                : colorScheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(22.r),
             border: Border.all(
               color: selected ? colorScheme.primary : Colors.transparent,
@@ -480,14 +553,17 @@ class _FilterChip extends StatelessWidget {
                 Icon(
                   icon,
                   size: 16.sp,
-                  color: selected ? colorScheme.onPrimary : colorScheme.onSurfaceVariant,
+                  color: selected
+                      ? colorScheme.onPrimary
+                      : colorScheme.onSurfaceVariant,
                 ),
                 SizedBox(width: 6.w),
               ],
               Text(
                 label,
                 style: TextStyle(
-                  color: selected ? colorScheme.onPrimary : colorScheme.onSurface,
+                  color:
+                      selected ? colorScheme.onPrimary : colorScheme.onSurface,
                   fontWeight: FontWeight.w700,
                   fontSize: 13.sp,
                 ),
@@ -499,7 +575,9 @@ class _FilterChip extends StatelessWidget {
                   child: Icon(
                     FlutterRemix.close_circle_fill,
                     size: 16.sp,
-                    color: selected ? colorScheme.onPrimary.withOpacity(0.8) : colorScheme.onSurfaceVariant,
+                    color: selected
+                        ? colorScheme.onPrimary.withOpacity(0.8)
+                        : colorScheme.onSurfaceVariant,
                   ),
                 ),
               ],
@@ -651,19 +729,23 @@ class _DateSelectorTile extends StatelessWidget {
           onTap: onTap,
           borderRadius: BorderRadius.circular(18.r),
           child: Container(
-            padding: EdgeInsets.symmetric(horizontal: AppSpacing.md.w, vertical: AppSpacing.md.h),
+            padding: EdgeInsets.symmetric(
+                horizontal: AppSpacing.md.w, vertical: AppSpacing.md.h),
             decoration: BoxDecoration(
               color: colorScheme.surfaceContainerLowest,
               borderRadius: BorderRadius.circular(18.r),
-              border: Border.all(color: colorScheme.outlineVariant.withOpacity(0.5)),
+              border: Border.all(
+                  color: colorScheme.outlineVariant.withOpacity(0.5)),
             ),
             child: Row(
               children: [
-                Icon(FlutterRemix.calendar_line, size: 20.sp, color: colorScheme.primary),
+                Icon(FlutterRemix.calendar_line,
+                    size: 20.sp, color: colorScheme.primary),
                 SizedBox(width: AppSpacing.sm.w),
                 Text(
                   '${date.day}/${date.month}/${date.year}',
-                  style: textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
+                  style: textTheme.bodyLarge
+                      ?.copyWith(fontWeight: FontWeight.w600),
                 ),
               ],
             ),

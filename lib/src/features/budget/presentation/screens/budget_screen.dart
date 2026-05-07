@@ -73,7 +73,11 @@ class BudgetScreen extends HookWidget {
                   builder: (context, budgetState) {
                     if (expenseState is ExpenseLoading ||
                         budgetState is BudgetLoading) {
-                      return const Center(child: CircularProgressIndicator());
+                      return _buildBudgetSkeleton(
+                        context,
+                        selectedMonth.value,
+                        showMonthPicker,
+                      );
                     }
 
                     if (budgetState is BudgetLoaded &&
@@ -345,6 +349,123 @@ class BudgetScreen extends HookWidget {
       'Dec'
     ];
     return '${months[date.month]} ${date.year}';
+  }
+
+  Widget _buildBudgetSkeleton(
+    BuildContext context,
+    DateTime selectedMonth,
+    VoidCallback showMonthPicker,
+  ) {
+    final theme = context.theme;
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
+    final placeholderBudgets = List.generate(
+      4,
+      (index) => Budget(
+        id: 'loading-$index',
+        category: index.isEven ? 'Food' : 'Transport',
+        amount: 500 + (index * 100),
+        month: selectedMonth,
+      ),
+    );
+
+    return Skeletonizer(
+      enabled: true,
+      child: SingleChildScrollView(
+        padding: EdgeInsets.all(AppSpacing.lg.w),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            GestureDetector(
+              onTap: showMonthPicker,
+              child: Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: AppSpacing.md.w,
+                  vertical: AppSpacing.sm.h,
+                ),
+                decoration: BoxDecoration(
+                  color: colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(16.r),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(FlutterRemix.calendar_line, size: 18.sp),
+                    SizedBox(width: AppSpacing.sm.w),
+                    Text(_formatMonth(selectedMonth)),
+                    SizedBox(width: AppSpacing.xs.w),
+                    Icon(FlutterRemix.arrow_down_s_line, size: 18.sp),
+                  ],
+                ),
+              ),
+            ),
+            SizedBox(height: AppSpacing.lg.h),
+            FinanceHeroCard(
+              padding: EdgeInsets.all(AppSpacing.lg.w),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Total Monthly Budget'),
+                  SizedBox(height: AppSpacing.sm.h),
+                  Text(
+                    'RM 2400.00',
+                    style: textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.w900,
+                      color: Colors.white,
+                    ),
+                  ),
+                  SizedBox(height: AppSpacing.lg.h),
+                  const Row(
+                    children: [
+                      Expanded(
+                        child: _BudgetSummaryItem(
+                          label: 'Spent',
+                          value: 'RM 1200.00',
+                        ),
+                      ),
+                      Expanded(
+                        child: _BudgetSummaryItem(
+                          label: 'Remaining',
+                          value: 'RM 1200.00',
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: AppSpacing.lg.h),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(999.r),
+                    child: LinearProgressIndicator(
+                      value: 0.5,
+                      minHeight: 10.h,
+                      backgroundColor:
+                          colorScheme.onPrimary.withValues(alpha: 0.18),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: AppSpacing.xl.h),
+            Text(
+              'Category Budgets',
+              style: textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w800,
+                color: colorScheme.onSurface,
+              ),
+            ),
+            SizedBox(height: AppSpacing.md.h),
+            ...placeholderBudgets.map(
+              (budget) => _BudgetCategoryCard(
+                icon: iconForCategory(budget.category),
+                title: budget.category,
+                spent: budget.amount / 2,
+                total: budget.amount,
+                onDelete: () {},
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

@@ -23,6 +23,7 @@ class ProfileScreen extends HookWidget {
     final user = AppConfig.authEnabled ? context.watch<SessionBloc>().state.user : null;
     final expenseState = context.watch<ExpenseCubit>().state;
     final budgetState = context.watch<BudgetCubit>().state;
+    final isStatsLoading = expenseState is ExpenseLoading || budgetState is BudgetLoading;
     final expenses = expenseState is ExpenseLoaded ? expenseState.expenses : const <Expense>[];
     final budgets = budgetState is BudgetLoaded ? budgetState.budgets : const <Budget>[];
     final totalIncome = expenses.where((expense) => expense.isIncome).fold<double>(0, (sum, expense) => sum + expense.amount);
@@ -76,29 +77,32 @@ class ProfileScreen extends HookWidget {
                       ),
                     ),
                     SizedBox(height: AppSpacing.lg.h),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _ProfileStatCard(
-                            label: 'Transaction',
-                            value: 'RM ${totalExpense.toStringAsFixed(2)}',
+                    Skeletonizer(
+                      enabled: isStatsLoading,
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: _ProfileStatCard(
+                              label: 'Transaction',
+                              value: isStatsLoading ? 'RM 1200.00' : 'RM ${totalExpense.toStringAsFixed(2)}',
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _ProfileStatCard(
-                            label: 'Budgets',
-                            value: 'RM ${totalBudget.toStringAsFixed(2)}',
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _ProfileStatCard(
+                              label: 'Budgets',
+                              value: isStatsLoading ? 'RM 2400.00' : 'RM ${totalBudget.toStringAsFixed(2)}',
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _ProfileStatCard(
-                            label: 'Savings',
-                            value: 'RM ${savings.toStringAsFixed(2)}',
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _ProfileStatCard(
+                              label: 'Savings',
+                              value: isStatsLoading ? 'RM 900.00' : 'RM ${savings.toStringAsFixed(2)}',
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ],
                 ),
@@ -361,7 +365,29 @@ class _CategoryManagerSheet extends HookWidget {
           BlocBuilder<CategoryCubit, CategoryState>(
             builder: (context, state) {
               if (state is CategoryLoading) {
-                return const Center(child: CircularProgressIndicator());
+                return Skeletonizer(
+                  enabled: true,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(maxHeight: 360.h),
+                    child: ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: 5,
+                      itemBuilder: (context, index) {
+                        return ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          title: Text(
+                            index.isEven ? 'Category name' : 'Another category',
+                            style: textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
+                          ),
+                          trailing: IconButton(
+                            onPressed: () {},
+                            icon: const Icon(FlutterRemix.delete_bin_line),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                );
               }
 
               final categories = state is CategoryLoaded ? state.categories : <String>[];
